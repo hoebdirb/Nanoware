@@ -1,0 +1,193 @@
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+--------------------------------------------------
+-- GUI SETUP
+--------------------------------------------------
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "NanoWareGUI"
+Gui.ResetOnSpawn = false
+Gui.Parent = game:GetService("CoreGui")
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(500, 320)
+Main.Position = UDim2.fromScale(0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+--------------------------------------------------
+-- TOP BAR
+--------------------------------------------------
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1, 0, 0, 40)
+Top.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Top.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.Text = "nanoware development"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.Parent = Top
+
+--------------------------------------------------
+-- DRAGGING
+--------------------------------------------------
+do
+    local dragging, dragStart, startPos
+
+    Top.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+--------------------------------------------------
+-- TAB BUTTONS
+--------------------------------------------------
+local TabsFrame = Instance.new("Frame")
+TabsFrame.Size = UDim2.new(0, 120, 1, -40)
+TabsFrame.Position = UDim2.new(0, 0, 0, 40)
+TabsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TabsFrame.Parent = Main
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 6)
+UIList.Parent = TabsFrame
+
+--------------------------------------------------
+-- CONTENT FRAME
+--------------------------------------------------
+local Pages = Instance.new("Frame")
+Pages.Size = UDim2.new(1, -120, 1, -40)
+Pages.Position = UDim2.new(0, 120, 0, 40)
+Pages.BackgroundTransparency = 1
+Pages.Parent = Main
+
+--------------------------------------------------
+-- TAB SYSTEM
+--------------------------------------------------
+local Tabs = {}
+local CurrentTab
+
+local function CreateTab(name)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, -10, 0, 36)
+    Button.Text = name
+    Button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Button.TextColor3 = Color3.new(1,1,1)
+    Button.Font = Enum.Font.Gotham
+    Button.TextSize = 14
+    Button.Parent = TabsFrame
+
+    local Page = Instance.new("Frame")
+    Page.Size = UDim2.fromScale(1,1)
+    Page.Visible = false
+    Page.BackgroundTransparency = 1
+    Page.Parent = Pages
+
+    local Layout = Instance.new("UIListLayout")
+    Layout.Padding = UDim.new(0, 8)
+    Layout.Parent = Page
+
+    Button.MouseButton1Click:Connect(function()
+        if CurrentTab then
+            CurrentTab.Visible = false
+        end
+        Page.Visible = true
+        CurrentTab = Page
+    end)
+
+    Tabs[name] = Page
+    return Page
+end
+
+--------------------------------------------------
+-- CREATE TABS
+--------------------------------------------------
+local BuildTab = CreateTab("Build Stealer")
+local AutoBuyTab = CreateTab("Auto Buy")
+local AutoFarmTab = CreateTab("Auto Farm")
+local SettingsTab = CreateTab("Settings")
+
+BuildTab.Visible = true
+CurrentTab = BuildTab
+
+--------------------------------------------------
+-- UI ELEMENTS
+--------------------------------------------------
+local function CreateButton(parent, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -20, 0, 36)
+    Btn.Text = text
+    Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    Btn.TextColor3 = Color3.new(1,1,1)
+    Btn.Font = Enum.Font.Gotham
+    Btn.TextSize = 14
+    Btn.Parent = parent
+
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+--------------------------------------------------
+-- BUILD TAB
+--------------------------------------------------
+CreateButton(BuildTab, "Steal Build", function()
+    print("Steal build pressed")
+end)
+
+--------------------------------------------------
+-- AUTO BUY
+--------------------------------------------------
+local AutoBuy = false
+CreateButton(AutoBuyTab, "Toggle Auto Buy", function()
+    AutoBuy = not AutoBuy
+    print("Auto Buy:", AutoBuy)
+end)
+
+--------------------------------------------------
+-- AUTO FARM
+--------------------------------------------------
+local AutoFarm = false
+CreateButton(AutoFarmTab, "Toggle Auto Farm", function()
+    AutoFarm = not AutoFarm
+    print("Auto Farm:", AutoFarm)
+end)
+
+--------------------------------------------------
+-- SETTINGS
+--------------------------------------------------
+CreateButton(SettingsTab, "Rejoin Server", function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
+end)
+
+print("✅ nanoware GUI loaded successfully")
