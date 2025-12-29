@@ -1,193 +1,237 @@
---------------------------------------------------
--- SERVICES
---------------------------------------------------
+-- Untitled Hub (FULL FIXED BUILD)
+
+--// Services
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
---------------------------------------------------
--- GUI SETUP
---------------------------------------------------
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "NanoWareGUI"
-Gui.ResetOnSpawn = false
-Gui.Parent = game:GetService("CoreGui")
+------------------------------------------------
+-- Load Rayfield
+------------------------------------------------
+local ok, Rayfield = pcall(function()
+    return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+end)
+if not ok or not Rayfield then return end
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.fromOffset(500, 320)
-Main.Position = UDim2.fromScale(0.5, 0.5)
-Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.BorderSizePixel = 0
-Main.Parent = Gui
+local Window = Rayfield:CreateWindow({
+    Name = "Untitled Hub",
+    LoadingTitle = "Untitled Hub",
+    LoadingSubtitle = "Full Fixed Build",
+    Theme = "AmberGlow",
+    ToggleUIKeybind = "K",
+    KeySystem = true,
+    KeySettings = {
+        Title = "Key System",
+        Subtitle = "Enter Key",
+        FileName = "UntitledHubKey",
+        SaveKey = true,
+        Key = {"k225"}
+    }
+})
 
---------------------------------------------------
--- TOP BAR
---------------------------------------------------
-local Top = Instance.new("Frame")
-Top.Size = UDim2.new(1, 0, 0, 40)
-Top.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Top.Parent = Main
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 1, 0)
-Title.Text = "nanoware development"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.Parent = Top
-
---------------------------------------------------
--- DRAGGING
---------------------------------------------------
-do
-    local dragging, dragStart, startPos
-
-    Top.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = Main.Position
+------------------------------------------------
+-- INFO TAB
+------------------------------------------------
+local TabInfo = Window:CreateTab("Info")
+TabInfo:CreateParagraph({Title="Credits", Content="Anonymous\nBuilt with Rayfield"})
+TabInfo:CreateButton({
+    Name="Copy Discord",
+    Callback=function()
+        if setclipboard then
+            setclipboard("https://discord.gg/AXME8C7J")
         end
-    end)
+    end
+})
 
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
+------------------------------------------------
+-- MAIN TAB
+------------------------------------------------
+local TabMain = Window:CreateTab("Main")
 
-    UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            Main.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
+-- Infinite Jump
+local infiniteJump = false
+TabMain:CreateToggle({
+    Name="Infinite Jump",
+    Callback=function(v)
+        infiniteJump = v
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJump then
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
         end
-    end)
+    end
+end)
+
+TabMain:CreateButton({
+    Name="Fly",
+    Callback=function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Fly-Gui-45909"))()
+    end
+})
+
+TabMain:CreateButton({
+    Name="Remote Spy",
+    Callback=function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-RemoteSpy-v3-33731"))()
+    end
+})
+
+TabMain:CreateButton({
+    Name="Dex Explorer",
+    Callback=function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Keyless-dex-working-new-25658"))()
+    end
+})
+
+------------------------------------------------
+-- PLAYER TAB
+------------------------------------------------
+local TabPlayer = Window:CreateTab("Player")
+
+local PlayerSettings = {
+    ws = 16,
+    jp = 50,
+    wsEnabled = false,
+    jpEnabled = false,
+    noclip = false
+}
+
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = PlayerSettings.wsEnabled and PlayerSettings.ws or 16
+        hum.JumpPower = PlayerSettings.jpEnabled and PlayerSettings.jp or 50
+    end
+    if PlayerSettings.noclip and char then
+        for _,v in ipairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+TabPlayer:CreateToggle({Name="Enable WalkSpeed", Callback=function(v) PlayerSettings.wsEnabled=v end})
+TabPlayer:CreateSlider({Name="WalkSpeed", Range={16,200}, CurrentValue=16, Callback=function(v) PlayerSettings.ws=v end})
+
+TabPlayer:CreateToggle({Name="Enable JumpPower", Callback=function(v) PlayerSettings.jpEnabled=v end})
+TabPlayer:CreateSlider({Name="JumpPower", Range={50,150}, CurrentValue=50, Callback=function(v) PlayerSettings.jp=v end})
+
+TabPlayer:CreateToggle({Name="NoClip", Callback=function(v) PlayerSettings.noclip=v end})
+
+------------------------------------------------
+-- ESP TAB
+------------------------------------------------
+local TabESP = Window:CreateTab("ESP")
+
+local ESP = {
+    Enabled=false,
+    Names=true,
+    Health=true,
+    Distance=true
+}
+
+TabESP:CreateToggle({Name="Enable ESP", Callback=function(v) ESP.Enabled=v end})
+TabESP:CreateToggle({Name="Names", CurrentValue=true, Callback=function(v) ESP.Names=v end})
+TabESP:CreateToggle({Name="Health", CurrentValue=true, Callback=function(v) ESP.Health=v end})
+TabESP:CreateToggle({Name="Distance", CurrentValue=true, Callback=function(v) ESP.Distance=v end})
+
+------------------------------------------------
+-- TELEPORT TAB
+------------------------------------------------
+local TabTP = Window:CreateTab("Teleport")
+local selectedPlayer = nil
+
+local dropdown = TabTP:CreateDropdown({
+    Name="Select Player",
+    Options={},
+    Callback=function(v)
+        selectedPlayer = typeof(v)=="table" and v[1] or v
+    end
+})
+
+local function refreshPlayers()
+    local list = {}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list,p.Name)
+        end
+    end
+    dropdown:Refresh(list)
 end
+refreshPlayers()
+Players.PlayerAdded:Connect(refreshPlayers)
+Players.PlayerRemoving:Connect(refreshPlayers)
 
---------------------------------------------------
--- TAB BUTTONS
---------------------------------------------------
-local TabsFrame = Instance.new("Frame")
-TabsFrame.Size = UDim2.new(0, 120, 1, -40)
-TabsFrame.Position = UDim2.new(0, 0, 0, 40)
-TabsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TabsFrame.Parent = Main
-
-local UIList = Instance.new("UIListLayout")
-UIList.Padding = UDim.new(0, 6)
-UIList.Parent = TabsFrame
-
---------------------------------------------------
--- CONTENT FRAME
---------------------------------------------------
-local Pages = Instance.new("Frame")
-Pages.Size = UDim2.new(1, -120, 1, -40)
-Pages.Position = UDim2.new(0, 120, 0, 40)
-Pages.BackgroundTransparency = 1
-Pages.Parent = Main
-
---------------------------------------------------
--- TAB SYSTEM
---------------------------------------------------
-local Tabs = {}
-local CurrentTab
-
-local function CreateTab(name)
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(1, -10, 0, 36)
-    Button.Text = name
-    Button.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    Button.TextColor3 = Color3.new(1,1,1)
-    Button.Font = Enum.Font.Gotham
-    Button.TextSize = 14
-    Button.Parent = TabsFrame
-
-    local Page = Instance.new("Frame")
-    Page.Size = UDim2.fromScale(1,1)
-    Page.Visible = false
-    Page.BackgroundTransparency = 1
-    Page.Parent = Pages
-
-    local Layout = Instance.new("UIListLayout")
-    Layout.Padding = UDim.new(0, 8)
-    Layout.Parent = Page
-
-    Button.MouseButton1Click:Connect(function()
-        if CurrentTab then
-            CurrentTab.Visible = false
+TabTP:CreateButton({
+    Name="Teleport",
+    Callback=function()
+        if selectedPlayer then
+            local target = Players:FindFirstChild(selectedPlayer)
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame =
+                    target.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+            end
         end
-        Page.Visible = true
-        CurrentTab = Page
-    end)
+    end
+})
 
-    Tabs[name] = Page
-    return Page
-end
+------------------------------------------------
+-- FLING TAB
+------------------------------------------------
+local TabFling = Window:CreateTab("Fling")
+local fling, antifling = false, false
 
---------------------------------------------------
--- CREATE TABS
---------------------------------------------------
-local BuildTab = CreateTab("Build Stealer")
-local AutoBuyTab = CreateTab("Auto Buy")
-local AutoFarmTab = CreateTab("Auto Farm")
-local SettingsTab = CreateTab("Settings")
+TabFling:CreateToggle({Name="Enable Fling", Callback=function(v) fling=v end})
+TabFling:CreateToggle({Name="Anti-Fling", Callback=function(v) antifling=v end})
 
-BuildTab.Visible = true
-CurrentTab = BuildTab
-
---------------------------------------------------
--- UI ELEMENTS
---------------------------------------------------
-local function CreateButton(parent, text, callback)
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, -20, 0, 36)
-    Btn.Text = text
-    Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    Btn.TextColor3 = Color3.new(1,1,1)
-    Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 14
-    Btn.Parent = parent
-
-    Btn.MouseButton1Click:Connect(callback)
-end
-
---------------------------------------------------
--- BUILD TAB
---------------------------------------------------
-CreateButton(BuildTab, "Steal Build", function()
-    print("Steal build pressed")
+RunService.Heartbeat:Connect(function()
+    if antifling then
+        for _,p in ipairs(Players:GetPlayers()) do
+            if p.Character then
+                for _,bp in ipairs(p.Character:GetChildren()) do
+                    if bp:IsA("BasePart") then
+                        bp.AssemblyLinearVelocity = Vector3.zero
+                        bp.AssemblyAngularVelocity = Vector3.zero
+                    end
+                end
+            end
+        end
+    end
 end)
 
---------------------------------------------------
--- AUTO BUY
---------------------------------------------------
-local AutoBuy = false
-CreateButton(AutoBuyTab, "Toggle Auto Buy", function()
-    AutoBuy = not AutoBuy
-    print("Auto Buy:", AutoBuy)
-end)
+------------------------------------------------
+-- MISC TAB
+------------------------------------------------
+local TabMisc = Window:CreateTab("Misc")
 
---------------------------------------------------
--- AUTO FARM
---------------------------------------------------
-local AutoFarm = false
-CreateButton(AutoFarmTab, "Toggle Auto Farm", function()
-    AutoFarm = not AutoFarm
-    print("Auto Farm:", AutoFarm)
-end)
+TabMisc:CreateButton({Name="Rejoin", Callback=function()
+    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+end})
 
---------------------------------------------------
--- SETTINGS
---------------------------------------------------
-CreateButton(SettingsTab, "Rejoin Server", function()
-    game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
-end)
+TabMisc:CreateButton({Name="Kill GUI", Callback=function()
+    Rayfield:Destroy()
+end})
 
-print("✅ nanoware GUI loaded successfully")
+local antiAFK = false
+TabMisc:CreateToggle({Name="Anti-AFK", Callback=function(v) antiAFK=v end})
+
+task.spawn(function()
+    while task.wait(60) do
+        if antiAFK then
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end
+    end
+end)
